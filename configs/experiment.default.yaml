@@ -26,3 +26,32 @@ paths:
   geometry_dir: artifacts/geometry
   dataset_dir: data/processed
   log_dir: artifacts/solver
+
+# Optimization engine settings (Phase 2).
+optimization:
+  algorithm: ga                 # one of: grid, ga, nsga2
+  objective: maximize_ld        # maximize_ld, maximize_cl, minimize_cd
+  max_evaluations: 1000
+  output_dir: artifacts/optimization
+  mission:
+    air_density: 1.225
+    velocities_mps: [20]
+    aoa_deg_start: 0
+    aoa_deg_stop: 8
+    aoa_deg_step: 4
+  constraints:
+    wing_area_m2: [0.10, 0.90]
+    penalty_weight: 100.0
+  grid:
+    points_per_dim: 4
+  ga:
+    population_size: 40
+    generations: 30
+    crossover_rate: 0.9
+    mutation_rate: 0.2
+    elite: 2
+  nsga2:
+    population_size: 40
+    generations: 30
+    crossover_rate: 0.9
+    mutation_rate: 0.2
