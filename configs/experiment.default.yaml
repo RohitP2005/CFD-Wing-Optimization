@@ -26,6 +26,7 @@ paths:
   geometry_dir: artifacts/geometry
   dataset_dir: data/processed
   log_dir: artifacts/solver
+  figures_dir: artifacts/figures
 
 # Optimization engine settings (Phase 2).
 optimization:

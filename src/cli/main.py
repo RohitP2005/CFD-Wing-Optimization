@@ -5,11 +5,14 @@ Usage:
     python -m src.cli.main simulate --config configs/experiment.default.yaml
     python -m src.cli.main optimize --config configs/experiment.default.yaml
     python -m src.cli.main train-surrogate --config configs/experiment.default.yaml
+    python -m src.cli.main report --config configs/experiment.default.yaml
+    python -m src.cli.main verify --config configs/experiment.default.yaml
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +26,7 @@ from ..dataio.tracking import (
     write_failure_log,
     write_run_metadata,
 )
-from ..geometry.generator import export_geometry, generate_wing
+from ..geometry.generator import export_geometry, generate_wing, WingParameters
 from ..geometry.sampling import sample_designs
 from ..geometry.validation import Bounds
 from ..ml.dataset import build_dataset, load_frame
@@ -37,6 +40,14 @@ from ..optimization.objective import Evaluator, build_mission
 from ..optimization.results import save_results
 from ..optimization.space import DesignSpace
 from ..simulation.runner import build_conditions, get_adapter, run_batch
+from ..visualization import plots_cfd, plots_geometry, plots_optimization
+from ..visualization.report import (
+    build_comparison,
+    evaluate_design,
+    plot_comparison,
+    write_comparison_report,
+)
+from ..visualization.reproducibility import verify_reproducibility
 
 DEFAULT_BOUNDS = "configs/bounds.default.yaml"
 
@@ -272,6 +283,93 @@ def cmd_train_surrogate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_report(args: argparse.Namespace) -> int:
+    """Generate static figures and a baseline-vs-optimized comparison."""
+    import pandas as pd
+
+    experiment, _, bounds = _resolve(args)
+    exp_meta = experiment["experiment"]
+    opt_cfg = experiment["optimization"]
+    figures_dir = Path(experiment.get("paths", {}).get("figures_dir", "artifacts/figures"))
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    cfg_hash = config_hash(experiment)
+    name = make_experiment_id(str(exp_meta["name"]) + "_report", cfg_hash)
+
+    written: list[Path] = []
+
+    # Performance plots from the most recent dataset, if any.
+    dataset_dir = Path(experiment["paths"]["dataset_dir"])
+    datasets = sorted(dataset_dir.glob("*.csv"))
+    if datasets:
+        frame = pd.read_csv(datasets[-1])
+        written.append(plots_cfd.plot_polar(frame, figures_dir / f"{name}.polar.png"))
+        written.append(
+            plots_cfd.plot_aoa_sweep(frame, path=figures_dir / f"{name}.aoa.png")
+        )
+
+    # Baseline vs optimized comparison using the best design, if available.
+    opt_dir = Path(opt_cfg.get("output_dir", "artifacts/optimization"))
+    best_files = sorted(opt_dir.glob("*.best.json"))
+    if best_files:
+        best_payload = json.loads(best_files[-1].read_text(encoding="utf-8"))
+        if best_payload and best_payload.get("params"):
+            space = DesignSpace.from_bounds(bounds)
+            adapter = get_adapter(str(experiment["solver"]["name"]))
+            mission_cfg = opt_cfg["mission"]
+            constraints_cfg = opt_cfg.get("constraints", {})
+
+            baseline_params = WingParameters.from_mapping(
+                _baseline_params(bounds)
+            )
+            optimized_params = WingParameters.from_mapping(best_payload["params"])
+
+            baseline_metrics = evaluate_design(
+                baseline_params, space, adapter, mission_cfg, constraints_cfg
+            )
+            optimized_metrics = evaluate_design(
+                optimized_params, space, adapter, mission_cfg, constraints_cfg
+            )
+            rows = build_comparison(baseline_metrics, optimized_metrics)
+            paths = write_comparison_report(rows, figures_dir, name)
+            written.extend(paths.values())
+            written.append(
+                plot_comparison(rows, figures_dir / f"{name}.comparison.png")
+            )
+            for r in rows:
+                print(
+                    f"  {r.metric}: baseline={r.baseline:.4f} "
+                    f"optimized={r.optimized:.4f} ({r.pct_change:+.1f}%)"
+                )
+
+    print(f"Report {name}: {len(written)} artifacts")
+    for path in written:
+        print(f"  {path}")
+    return 0
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    """Verify optimization reproducibility for a fixed seed."""
+    experiment, _, bounds = _resolve(args)
+    seed = int(experiment["experiment"]["seed"])
+    result = verify_reproducibility(experiment, bounds, seed)
+    status = "MATCH" if result.matched else "MISMATCH"
+    print(f"Reproducibility: {status}")
+    print(f"  run A cost: {result.run_a_cost}")
+    print(f"  run B cost: {result.run_b_cost}")
+    print(f"  difference: {result.difference:.3e} (tol {result.tolerance:.0e})")
+    return 0 if result.matched else 1
+
+
+def _baseline_params(bounds) -> dict:
+    """Return a baseline design at the midpoint of each design-variable range."""
+    ranges = bounds.ranges
+    mid = {k: (lo + hi) / 2.0 for k, (lo, hi) in ranges.items()}
+    if mid["tip_chord_m"] > mid["root_chord_m"]:
+        mid["tip_chord_m"] = mid["root_chord_m"]
+    airfoil = bounds.airfoils[0] if bounds.airfoils else "NACA2412"
+    return {**mid, "airfoil_id": airfoil}
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the CLI argument parser."""
     parser = argparse.ArgumentParser(prog="wing-cfd", description=__doc__)
@@ -282,6 +380,8 @@ def build_parser() -> argparse.ArgumentParser:
         ("simulate", cmd_simulate),
         ("optimize", cmd_optimize),
         ("train-surrogate", cmd_train_surrogate),
+        ("report", cmd_report),
+        ("verify", cmd_verify),
     ):
         sp = sub.add_parser(name, help=f"{name} pipeline stage")
         sp.add_argument("--config", required=True, help="Experiment config YAML")
