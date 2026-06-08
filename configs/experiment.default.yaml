@@ -55,3 +55,14 @@ optimization:
     generations: 30
     crossover_rate: 0.9
     mutation_rate: 0.2
+
+# Machine learning surrogate settings (Phase 3).
+ml:
+  dataset_path: data/processed/surrogate_dataset.csv
+  model: random_forest          # random_forest, gradient_boosting, mlp, xgboost
+  targets: [CL, CD, LD]
+  test_fraction: 0.2
+  r2_threshold: 0.90
+  model_dir: artifacts/models
+  model_params:
+    n_estimators: 200

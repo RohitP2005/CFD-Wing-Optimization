@@ -4,6 +4,7 @@ Usage:
     python -m src.cli.main generate --config configs/experiment.default.yaml
     python -m src.cli.main simulate --config configs/experiment.default.yaml
     python -m src.cli.main optimize --config configs/experiment.default.yaml
+    python -m src.cli.main train-surrogate --config configs/experiment.default.yaml
 """
 
 from __future__ import annotations
@@ -25,6 +26,9 @@ from ..dataio.tracking import (
 from ..geometry.generator import export_geometry, generate_wing
 from ..geometry.sampling import sample_designs
 from ..geometry.validation import Bounds
+from ..ml.dataset import build_dataset, load_frame
+from ..ml.infer import SurrogateAdapter
+from ..ml.train import save_bundle, train_surrogate
 from ..optimization.constraints import ConstraintSet
 from ..optimization.ga import GeneticAlgorithm
 from ..optimization.grid_search import GridSearch
@@ -178,7 +182,12 @@ def cmd_optimize(args: argparse.Namespace) -> int:
     experiment_id = make_experiment_id(str(exp_meta["name"]) + "_opt", cfg_hash)
 
     space = DesignSpace.from_bounds(bounds)
-    adapter = get_adapter(str(experiment["solver"]["name"]))
+    surrogate_cfg = opt_cfg.get("surrogate", {})
+    if surrogate_cfg.get("enabled"):
+        # Surrogate-in-the-loop: replace the CFD solver with a trained model.
+        adapter = SurrogateAdapter.from_path(str(surrogate_cfg["model_path"]))
+    else:
+        adapter = get_adapter(str(experiment["solver"]["name"]))
     mission = build_mission(opt_cfg["mission"])
     constraints = ConstraintSet.from_config(opt_cfg.get("constraints", {}))
     evaluator = Evaluator(
@@ -214,6 +223,55 @@ def cmd_optimize(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_train_surrogate(args: argparse.Namespace) -> int:
+    """Train and evaluate an ML surrogate from a CFD dataset."""
+    experiment, bounds_cfg, _ = _resolve(args)
+    exp_meta = experiment["experiment"]
+    seed = int(exp_meta["seed"])
+    ml_cfg = experiment["ml"]
+
+    dataset_path = args.dataset or ml_cfg["dataset_path"]
+    frame = load_frame(dataset_path)
+
+    targets = tuple(ml_cfg.get("targets", ("CL", "CD", "LD")))
+    airfoils = bounds_cfg.get("airfoils")
+    dataset = build_dataset(
+        frame,
+        airfoils=airfoils,
+        targets=targets,
+        test_fraction=float(ml_cfg.get("test_fraction", 0.2)),
+        seed=seed,
+    )
+
+    model_name = str(ml_cfg.get("model", "random_forest"))
+    threshold = float(ml_cfg.get("r2_threshold", 0.90))
+    bundle, report = train_surrogate(
+        dataset,
+        model_name,
+        seed=seed,
+        threshold=threshold,
+        model_params=ml_cfg.get("model_params", {}),
+    )
+
+    cfg_hash = config_hash(experiment)
+    name = make_experiment_id(str(exp_meta["name"]) + "_surrogate", cfg_hash)
+    model_dir = ml_cfg.get("model_dir", "artifacts/models")
+    paths = save_bundle(bundle, report, model_dir, name)
+
+    print(
+        f"Surrogate {name} [{model_name}]: "
+        f"train={report.n_train} test={report.n_test} passed={report.passed}"
+    )
+    for target in dataset.targets:
+        m = report.metrics[target]
+        print(
+            f"  {target}: R2={m['r2']:.3f} RMSE={m['rmse']:.4f} MAE={m['mae']:.4f}"
+        )
+    for kind, path in paths.items():
+        print(f"  {kind}: {path}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the CLI argument parser."""
     parser = argparse.ArgumentParser(prog="wing-cfd", description=__doc__)
@@ -223,10 +281,15 @@ def build_parser() -> argparse.ArgumentParser:
         ("generate", cmd_generate),
         ("simulate", cmd_simulate),
         ("optimize", cmd_optimize),
+        ("train-surrogate", cmd_train_surrogate),
     ):
         sp = sub.add_parser(name, help=f"{name} pipeline stage")
         sp.add_argument("--config", required=True, help="Experiment config YAML")
         sp.add_argument("--bounds", default=None, help="Bounds config YAML")
+        if name == "train-surrogate":
+            sp.add_argument(
+                "--dataset", default=None, help="Override dataset path"
+            )
         sp.set_defaults(handler=handler)
 
     return parser
