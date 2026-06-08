@@ -24,11 +24,18 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from src.geometry.generator import WingParameters  # noqa: E402
-from src.visualization import plots_cfd, plots_geometry, plots_optimization  # noqa: E402
+from src.simulation.fields import load_fields  # noqa: E402
+from src.visualization import (  # noqa: E402
+    plots_cfd,
+    plots_fields,
+    plots_geometry,
+    plots_optimization,
+)
 
 DATASET_DIR = _REPO_ROOT / "data" / "processed"
 OPT_DIR = _REPO_ROOT / "artifacts" / "optimization"
 MODEL_DIR = _REPO_ROOT / "artifacts" / "models"
+FIELDS_DIR = _REPO_ROOT / "artifacts" / "solver" / "fields"
 AIRFOILS = ["NACA0012", "NACA2412", "NACA4412"]
 
 
@@ -96,6 +103,27 @@ def page_optimization() -> None:
         st.dataframe(pareto)
 
 
+def page_flow_fields() -> None:
+    st.header("Flow Fields")
+    sidecars = sorted(FIELDS_DIR.glob("**/field.json")) if FIELDS_DIR.exists() else []
+    if not sidecars:
+        st.info(
+            "No field artifacts found. Run `simulate` with a field solver "
+            "(set `solver.name: panel2d` and `solver.save_fields: true`)."
+        )
+        return
+    labels = [f"{p.parent.parent.name}/{p.parent.name}" for p in sidecars]
+    choice = st.selectbox("Field case", labels)
+    data = load_fields(sidecars[labels.index(choice)])
+    col1, col2 = st.columns(2)
+    with col1:
+        st.pyplot(plots_fields.plot_surface_cp(data))
+        st.pyplot(plots_fields.plot_velocity_contour(data))
+    with col2:
+        st.pyplot(plots_fields.plot_pressure_contour(data))
+        st.pyplot(plots_fields.plot_streamlines(data))
+
+
 def page_experiments() -> None:
     st.header("Experiments")
     st.subheader("Datasets")
@@ -111,12 +139,14 @@ def main() -> None:
     st.title("AI-Assisted Wing CFD and Optimization")
     page = st.sidebar.radio(
         "Page",
-        ("Geometry", "Performance", "Optimization", "Experiments"),
+        ("Geometry", "Performance", "Flow Fields", "Optimization", "Experiments"),
     )
     if page == "Geometry":
         page_geometry()
     elif page == "Performance":
         page_performance()
+    elif page == "Flow Fields":
+        page_flow_fields()
     elif page == "Optimization":
         page_optimization()
     else:

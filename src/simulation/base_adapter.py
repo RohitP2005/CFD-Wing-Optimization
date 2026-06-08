@@ -58,3 +58,17 @@ class BaseSolverAdapter(ABC):
     ) -> SimulationResult:
         """Evaluate a single design at a single flight condition."""
         raise NotImplementedError
+
+    @property
+    def supports_fields(self) -> bool:
+        """Whether this adapter can produce spatial flow fields (FR-CFD-01)."""
+        return False
+
+    def compute_field(
+        self,
+        geometry: WingGeometry,
+        condition: FlightCondition,
+        result: SimulationResult | None = None,
+    ):
+        """Return a :class:`FieldData` for this case, or None if unsupported."""
+        return None

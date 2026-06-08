@@ -40,7 +40,12 @@ from ..optimization.objective import Evaluator, build_mission
 from ..optimization.results import save_results
 from ..optimization.space import DesignSpace
 from ..simulation.runner import build_conditions, get_adapter, run_batch
-from ..visualization import plots_cfd, plots_geometry, plots_optimization
+from ..visualization import (
+    plots_cfd,
+    plots_fields,
+    plots_geometry,
+    plots_optimization,
+)
 from ..visualization.report import (
     build_comparison,
     evaluate_design,
@@ -110,9 +115,21 @@ def cmd_simulate(args: argparse.Namespace) -> int:
     for geometry in geometries:
         export_geometry(geometry, paths["geometry_dir"])
 
+    solver_cfg = experiment["solver"]
     conditions = build_conditions(experiment["conditions"])
-    adapter = get_adapter(str(experiment["solver"]["name"]))
-    outcome = run_batch(geometries, conditions, adapter)
+    adapter = get_adapter(
+        str(solver_cfg["name"]),
+        allow_fallback=bool(solver_cfg.get("allow_fallback", False)),
+    )
+    save_fields = bool(solver_cfg.get("save_fields", False))
+    fields_dir = solver_cfg.get("fields_dir", "artifacts/solver/fields")
+    outcome = run_batch(
+        geometries,
+        conditions,
+        adapter,
+        save_fields=save_fields,
+        fields_dir=fields_dir,
+    )
 
     geometry_by_id = {g.design_id: g for g in geometries}
     records = [
@@ -128,6 +145,8 @@ def cmd_simulate(args: argparse.Namespace) -> int:
     ]
 
     dataset_paths = write_dataset(records, paths["dataset_dir"], experiment_id)
+    if outcome.field_artifacts:
+        print(f"  field artifacts: {len(outcome.field_artifacts)} written")
     write_failure_log(paths["log_dir"], experiment_id, outcome.failures)
     write_run_metadata(
         paths["log_dir"],
@@ -340,6 +359,34 @@ def cmd_report(args: argparse.Namespace) -> int:
                     f"  {r.metric}: baseline={r.baseline:.4f} "
                     f"optimized={r.optimized:.4f} ({r.pct_change:+.1f}%)"
                 )
+
+    # Flow-field figures from the most recent field artifact, if any.
+    fields_dir = Path(
+        experiment["solver"].get("fields_dir", "artifacts/solver/fields")
+    )
+    sidecars = sorted(fields_dir.glob("**/field.json"))
+    if sidecars:
+        from ..simulation.fields import load_fields
+
+        field_data = load_fields(sidecars[-1])
+        written.append(
+            plots_fields.plot_surface_cp(field_data, figures_dir / f"{name}.cp.png")
+        )
+        written.append(
+            plots_fields.plot_pressure_contour(
+                field_data, figures_dir / f"{name}.pressure.png"
+            )
+        )
+        written.append(
+            plots_fields.plot_velocity_contour(
+                field_data, figures_dir / f"{name}.velocity.png"
+            )
+        )
+        written.append(
+            plots_fields.plot_streamlines(
+                field_data, figures_dir / f"{name}.streamlines.png"
+            )
+        )
 
     print(f"Report {name}: {len(written)} artifacts")
     for path in written:
