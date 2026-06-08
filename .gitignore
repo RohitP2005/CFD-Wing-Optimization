@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Generated data and artifacts
+data/raw/
+data/processed/
+artifacts/geometry/
+artifacts/solver/
+artifacts/figures/
+artifacts/models/
+*.parquet
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

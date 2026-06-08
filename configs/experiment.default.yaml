@@ -1,0 +1,28 @@
+# Default experiment configuration for Phase 1.
+experiment:
+  name: baseline_phase1
+  seed: 42
+  tag: phase1
+
+# Operating conditions evaluated for every generated design.
+conditions:
+  air_density: 1.225          # kg/m^3
+  velocities_mps: [15, 20, 25]
+  aoa_deg_start: -5
+  aoa_deg_stop: 15
+  aoa_deg_step: 5
+
+# Solver selection. Phase 1 ships the analytic low-fidelity adapter.
+solver:
+  name: analytic
+
+# Design sampling for batch generation/simulation.
+sampling:
+  method: lhs                 # one of: lhs, grid, fixed
+  num_designs: 8
+
+# Output locations.
+paths:
+  geometry_dir: artifacts/geometry
+  dataset_dir: data/processed
+  log_dir: artifacts/solver
