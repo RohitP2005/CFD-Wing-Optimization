@@ -1,0 +1,105 @@
+{
+  "experiment_id": "baseline_phase1_20260609T045424Z_7bf104ac3199",
+  "timestamp": "2026-06-09T04:54:26.512035+00:00",
+  "config_hash": "7bf104ac3199",
+  "seed": 42,
+  "num_designs": 8,
+  "num_results": 120,
+  "num_failures": 0,
+  "dataset_paths": {
+    "csv": "data\\processed\\baseline_phase1_20260609T045424Z_7bf104ac3199.csv",
+    "parquet": "data\\processed\\baseline_phase1_20260609T045424Z_7bf104ac3199.parquet"
+  },
+  "config": {
+    "experiment": {
+      "name": "baseline_phase1",
+      "seed": 42,
+      "tag": "phase1"
+    },
+    "conditions": {
+      "air_density": 1.225,
+      "velocities_mps": [
+        15,
+        20,
+        25
+      ],
+      "aoa_deg_start": -5,
+      "aoa_deg_stop": 15,
+      "aoa_deg_step": 5
+    },
+    "solver": {
+      "name": "panel2d",
+      "save_fields": true,
+      "allow_fallback": true,
+      "fields_dir": "artifacts/solver/fields",
+      "panel2d": {
+        "n_panels": 160,
+        "grid_nx": 140,
+        "grid_ny": 110
+      }
+    },
+    "sampling": {
+      "method": "lhs",
+      "num_designs": 8
+    },
+    "paths": {
+      "geometry_dir": "artifacts/geometry",
+      "dataset_dir": "data/processed",
+      "log_dir": "artifacts/solver",
+      "figures_dir": "artifacts/figures"
+    },
+    "optimization": {
+      "algorithm": "ga",
+      "objective": "maximize_ld",
+      "max_evaluations": 1000,
+      "output_dir": "artifacts/optimization",
+      "mission": {
+        "air_density": 1.225,
+        "velocities_mps": [
+          20
+        ],
+        "aoa_deg_start": 0,
+        "aoa_deg_stop": 8,
+        "aoa_deg_step": 4
+      },
+      "constraints": {
+        "wing_area_m2": [
+          0.1,
+          0.9
+        ],
+        "penalty_weight": 100.0
+      },
+      "grid": {
+        "points_per_dim": 4
+      },
+      "ga": {
+        "population_size": 40,
+        "generations": 30,
+        "crossover_rate": 0.9,
+        "mutation_rate": 0.2,
+        "elite": 2
+      },
+      "nsga2": {
+        "population_size": 40,
+        "generations": 30,
+        "crossover_rate": 0.9,
+        "mutation_rate": 0.2
+      }
+    },
+    "ml": {
+      "dataset_path": "data/processed/surrogate_dataset.csv",
+      "model": "random_forest",
+      "targets": [
+        "CL",
+        "CD",
+        "LD"
+      ],
+      "test_fraction": 0.2,
+      "r2_threshold": 0.9,
+      "model_dir": "artifacts/models",
+      "model_params": {
+        "n_estimators": 200
+      }
+    }
+  }
+}

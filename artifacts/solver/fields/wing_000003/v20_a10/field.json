@@ -1,0 +1,28 @@
+{
+  "design_id": "wing_000003",
+  "condition_id": "v20_a10",
+  "solver": "panel2d",
+  "grid_shape": [
+    110,
+    140
+  ],
+  "fields": [
+    "pressure",
+    "velocity_x",
+    "velocity_y"
+  ],
+  "units": {
+    "pressure": "Cp",
+    "velocity": "U_inf"
+  },
+  "surface_file": "artifacts\\solver\\fields\\wing_000003\\v20_a10\\surface.csv",
+  "field_file": "artifacts\\solver\\fields\\wing_000003\\v20_a10\\field.npz",
+  "status": "converged",
+  "iterations": 160,
+  "residual_final": 0.0,
+  "runtime_sec": 0.001271400018595159,
+  "meta": {
+    "airfoil": "NACA0012",
+    "aoa_deg": 10.0
+  }
+}

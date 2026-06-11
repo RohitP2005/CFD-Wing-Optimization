@@ -1,0 +1,13 @@
+{
+  "span_m": 1.7090837321731303,
+  "root_chord_m": 0.4950325563841662,
+  "tip_chord_m": 0.1535623014526694,
+  "sweep_deg": 26.447993606285344,
+  "twist_deg": 3.980400296050602,
+  "airfoil_id": "NACA0012",
+  "design_id": "wing_000069",
+  "wing_area_m2": 0.5542514601500399,
+  "aspect_ratio": 5.2701118780780645,
+  "taper_ratio": 0.3102064691953281,
+  "mean_aerodynamic_chord_m": 0.35426013306110016
+}

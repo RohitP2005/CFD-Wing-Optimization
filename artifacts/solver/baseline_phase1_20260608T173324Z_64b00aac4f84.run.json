@@ -1,0 +1,105 @@
+{
+  "experiment_id": "baseline_phase1_20260608T173324Z_64b00aac4f84",
+  "timestamp": "2026-06-08T17:33:25.362235+00:00",
+  "config_hash": "64b00aac4f84",
+  "seed": 42,
+  "num_designs": 2,
+  "num_results": 30,
+  "num_failures": 0,
+  "dataset_paths": {
+    "csv": "data\\processed\\baseline_phase1_20260608T173324Z_64b00aac4f84.csv",
+    "parquet": "data\\processed\\baseline_phase1_20260608T173324Z_64b00aac4f84.parquet"
+  },
+  "config": {
+    "conditions": {
+      "air_density": 1.225,
+      "aoa_deg_start": -5,
+      "aoa_deg_step": 5,
+      "aoa_deg_stop": 15,
+      "velocities_mps": [
+        15,
+        20,
+        25
+      ]
+    },
+    "experiment": {
+      "name": "baseline_phase1",
+      "seed": 42,
+      "tag": "phase1"
+    },
+    "ml": {
+      "dataset_path": "data/processed/surrogate_dataset.csv",
+      "model": "random_forest",
+      "model_dir": "artifacts/models",
+      "model_params": {
+        "n_estimators": 200
+      },
+      "r2_threshold": 0.9,
+      "targets": [
+        "CL",
+        "CD",
+        "LD"
+      ],
+      "test_fraction": 0.2
+    },
+    "optimization": {
+      "algorithm": "ga",
+      "constraints": {
+        "penalty_weight": 100.0,
+        "wing_area_m2": [
+          0.1,
+          0.9
+        ]
+      },
+      "ga": {
+        "crossover_rate": 0.9,
+        "elite": 2,
+        "generations": 30,
+        "mutation_rate": 0.2,
+        "population_size": 40
+      },
+      "grid": {
+        "points_per_dim": 4
+      },
+      "max_evaluations": 1000,
+      "mission": {
+        "air_density": 1.225,
+        "aoa_deg_start": 0,
+        "aoa_deg_step": 4,
+        "aoa_deg_stop": 8,
+        "velocities_mps": [
+          20
+        ]
+      },
+      "nsga2": {
+        "crossover_rate": 0.9,
+        "generations": 30,
+        "mutation_rate": 0.2,
+        "population_size": 40
+      },
+      "objective": "maximize_ld",
+      "output_dir": "artifacts/optimization"
+    },
+    "paths": {
+      "dataset_dir": "data/processed",
+      "figures_dir": "artifacts/figures",
+      "geometry_dir": "artifacts/geometry",
+      "log_dir": "artifacts/solver"
+    },
+    "sampling": {
+      "method": "lhs",
+      "num_designs": 2
+    },
+    "solver": {
+      "allow_fallback": true,
+      "fields_dir": "artifacts/solver/fields",
+      "name": "panel2d",
+      "panel2d": {
+        "grid_nx": 140,
+        "grid_ny": 110,
+        "n_panels": 160
+      },
+      "save_fields": true
+    }
+  }
+}

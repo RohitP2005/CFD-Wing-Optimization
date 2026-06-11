@@ -1,0 +1,21 @@
+{
+  "algorithm": "nsga2",
+  "params": {
+    "span_m": 1.9973866341952744,
+    "root_chord_m": 0.15,
+    "tip_chord_m": 0.05,
+    "sweep_deg": 30.0,
+    "twist_deg": -5.0,
+    "airfoil_id": "NACA0012"
+  },
+  "metrics": {
+    "CL": 0.12926774809901606,
+    "CD": 0.008998528659769543,
+    "LD": 10.680786893480317,
+    "wing_area_m2": 0.19973866341952745,
+    "aspect_ratio": 19.973866341952743
+  },
+  "feasible": true,
+  "penalty": 0.0,
+  "cost": -10.680786893480317
+}

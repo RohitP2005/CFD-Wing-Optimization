@@ -1,30 +1,36 @@
-# Byte-compiled / optimized / cache
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Virtual environments
 .venv/
 venv/
 env/
+*.egg-info/
 
-# Test / coverage
+# Testing / coverage
 .pytest_cache/
 .coverage
 htmlcov/
 
-# Generated data and artifacts
-data/raw/
-data/processed/
-artifacts/geometry/
-artifacts/solver/
-artifacts/figures/
-artifacts/models/
-artifacts/optimization/
+# Backend — generated data and artifacts
+backend/data/raw/
+backend/data/processed/
+backend/artifacts/
+backend/wing_design.db
 *.parquet
 *.log
+
+# Frontend — build output and dependencies
+frontend/node_modules/
+frontend/.output/
+frontend/dist/
+frontend/.vinxi/
+frontend/.nitro/
 
 # OS / editor
 .DS_Store
 .vscode/
 .idea/
+
+# Pixel-perfect legacy (can be removed once renamed)
+pixel-perfect/

@@ -14,9 +14,9 @@ conditions:
 
 # Solver selection. Phase 1 ships the analytic low-fidelity adapter.
 solver:
-  name: analytic
+  name: panel2d          # field-producing solver (was: analytic)
+  save_fields: true      # write pressure/velocity field artifacts
   allow_fallback: true        # fall back to analytic if a field solver is unavailable
-  save_fields: false          # write pressure/velocity field artifacts (panel2d)
   fields_dir: artifacts/solver/fields
   panel2d:
     n_panels: 160

@@ -1,0 +1,43 @@
+{
+  "experiment_id": "baseline_phase1_20260608T160559Z_307e022cd6f5",
+  "timestamp": "2026-06-08T16:05:59.495865+00:00",
+  "config_hash": "307e022cd6f5",
+  "seed": 42,
+  "num_designs": 8,
+  "num_results": 120,
+  "num_failures": 0,
+  "dataset_paths": {
+    "csv": "data\\processed\\baseline_phase1_20260608T160559Z_307e022cd6f5.csv",
+    "parquet": "data\\processed\\baseline_phase1_20260608T160559Z_307e022cd6f5.parquet"
+  },
+  "config": {
+    "experiment": {
+      "name": "baseline_phase1",
+      "seed": 42,
+      "tag": "phase1"
+    },
+    "conditions": {
+      "air_density": 1.225,
+      "velocities_mps": [
+        15,
+        20,
+        25
+      ],
+      "aoa_deg_start": -5,
+      "aoa_deg_stop": 15,
+      "aoa_deg_step": 5
+    },
+    "solver": {
+      "name": "analytic"
+    },
+    "sampling": {
+      "method": "lhs",
+      "num_designs": 8
+    },
+    "paths": {
+      "geometry_dir": "artifacts/geometry",
+      "dataset_dir": "data/processed",
+      "log_dir": "artifacts/solver"
+    }
+  }
+}
