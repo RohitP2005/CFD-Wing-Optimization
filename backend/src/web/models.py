@@ -153,7 +153,11 @@ class OptimizationRun(Base):
         }
 
 
-def get_or_create_db_session(db_url: str = "sqlite:///./wing_design.db") -> Session:
+def get_or_create_db_session(db_url: str = "") -> Session:
+    import os
+    if not db_url:
+        db_path = "/tmp/wing_design.db" if os.environ.get("VERCEL") else "./wing_design.db"
+        db_url = f"sqlite:///{db_path}"
     """Create database engine and return session."""
     engine = create_engine(db_url, connect_args={"check_same_thread": False} if "sqlite" in db_url else {})
     Base.metadata.create_all(bind=engine)
