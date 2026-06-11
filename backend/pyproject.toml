@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "AI-Assisted Wing CFD and Parametric Optimization for Small UAVs"
 requires-python = ">=3.10"
 
+[tool.vercel]
+entrypoint = "src.web.api:app"
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
